@@ -35,5 +35,128 @@ parse_request(char *input_buf) {
     }
 
     memcpy(request->uri, input_buf, uri_len + 1);
-    request->uri[uri_len];
+    request->uri[uri_len] = '\0';
+    input_buf += uri_len + 1;
+
+    // Parsing HTTP
+    size_t http_len = strcspn(input_buf, "\r");
+    request->http = malloc(sizeof(http_len + 1));
+
+    if (request->http == NULL) {
+        free_request(request);
+        return NULL;
+    }
+
+    memcpy(request-http, input_buf, http_len+1);
+    request->http[http_len] = '\0';
+    input_but += http_len + 2;
+
+    /* Handling Headers */
+    struct Header *curr_header = NULL< *prev_header = NULL;
+    size_t name_len, value_len;
+
+    while (input_buf[0] != '\n') {
+        // Allocating new header struct
+        prev_header = curr_header;
+        curr_header = malloc(sizeof(struct Header));
+
+        if (curr_header == NULL) {
+            free_request(request);
+            return NULL;
+        }
+
+        // Name
+        name_len = strcspn(input_buf, ':');
+        curr_header->name = malloc(name_len + 1);
+
+        if (curr_header->name == NULL) {
+            free_header(curr_header);
+            free_request(request);
+            return NULL;
+        }
+
+        strncpy(curr_header->name, input_buf, name_len);
+        curr_header->name[name_len] = '\0';
+        input_buf += name_len + 2;
+
+        // Value
+        value_len = strncpn(input_buf, '\n');
+        curr_header->value = malloc(value_len + 1);
+
+        if (curr_header->value == NULL) {
+            free_header(curr_header);
+            free_request(request);
+            return NULL;
+        }
+
+        strncpy(curr_header->value, input_buf, value_len);
+        curr_header->value[value_len] = '\0';
+        input_buf += value_len + 2;
+
+        // Preparing for next iteration
+        curr_header->next = prev_header;
+    }
+
+    request->headers = curr_header;
+    input_buf += 2;
+
+    /* Body */
+    size_t body_len = strlen(input_buf);
+    request->body = malloc(body_len + 1);
+
+    if (request->body == NULL) {
+        free_header(request->headers);
+        free_request(request);
+        return NULL;
+    }
+
+    strncpy(request->body, input_buf, body_len);
+    request->body[body_len] = '\0';
+
+    return request;
 }
+
+
+//struct Pair *
+//parse_body(char *body) {
+    /**
+     * Parses body into a linked list of key value pairs
+     * Note: This should most likely be a hashtable, but I do not want extra dependencies
+     */
+
+    //struct Pair *curr_pair, *prev_pair
+
+    //while (*body != '\n') {
+        
+  //  }
+//}
+
+void
+free_request(struct Request *request) {
+    /**
+     * Frees request struct and returns void upon completion
+     * Note: This function does not free header linked list. Must call 
+     * free_header function to do this
+     */
+
+    free(request->name);
+    free(request->body);
+    free(request->body);
+    free(request);
+}
+
+
+void
+free_header(struct Header *header) {
+    /**
+     * Frees header structs nested in linked list and returns void upon completion.
+     * It is best practice to call this function from the head of the linked list
+     */
+    if (header != NULL) {
+        free(header->name);
+        free(header->value);
+        free_header(header->next);
+        free(header);
+    }
+}
+
