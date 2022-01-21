@@ -47,12 +47,12 @@ parse_request(char *input_buf) {
         return NULL;
     }
 
-    memcpy(request-http, input_buf, http_len+1);
+    memcpy(request->http, input_buf, http_len+1);
     request->http[http_len] = '\0';
-    input_but += http_len + 2;
+    input_buf += http_len + 2;
 
     /* Handling Headers */
-    struct Header *curr_header = NULL< *prev_header = NULL;
+    struct Header *curr_header = NULL, *prev_header = NULL;
     size_t name_len, value_len;
 
     while (input_buf[0] != '\n') {
@@ -66,7 +66,7 @@ parse_request(char *input_buf) {
         }
 
         // Name
-        name_len = strcspn(input_buf, ':');
+        name_len = strcspn(input_buf, "\r");
         curr_header->name = malloc(name_len + 1);
 
         if (curr_header->name == NULL) {
@@ -80,7 +80,7 @@ parse_request(char *input_buf) {
         input_buf += name_len + 2;
 
         // Value
-        value_len = strncpn(input_buf, '\n');
+        value_len = strcspn(input_buf, "\n");
         curr_header->value = malloc(value_len + 1);
 
         if (curr_header->value == NULL) {
@@ -139,8 +139,7 @@ free_request(struct Request *request) {
      * free_header function to do this
      */
 
-    free(request->name);
-    free(request->body);
+    free(request->uri);
     free(request->body);
     free(request);
 }
