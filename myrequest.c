@@ -1,4 +1,5 @@
 #include "myrequest.h"
+#include <stdio.h>
 
 struct Request *
 parse_request(char *input_buf) {
@@ -7,6 +8,8 @@ parse_request(char *input_buf) {
      */
 
     struct Request *request = malloc(sizeof(struct Request));
+
+    printf("here\n");
 
     if (request == NULL) {
         return NULL;
@@ -34,12 +37,12 @@ parse_request(char *input_buf) {
         return NULL;
     }
 
-    memcpy(request->uri, input_buf, uri_len + 1);
+    memcpy(request->uri, input_buf, uri_len);
     request->uri[uri_len] = '\0';
     input_buf += uri_len + 1;
 
     // Parsing HTTP
-    size_t http_len = strcspn(input_buf, "\r");
+    size_t http_len = strcspn(input_buf, "\n");
     request->http = malloc(sizeof(http_len + 1));
 
     if (request->http == NULL) {
@@ -47,13 +50,15 @@ parse_request(char *input_buf) {
         return NULL;
     }
 
-    memcpy(request->http, input_buf, http_len+1);
+    memcpy(request->http, input_buf, http_len);
     request->http[http_len] = '\0';
-    input_buf += http_len + 2;
+    input_buf += http_len + 1;
 
     /* Handling Headers */
-    struct Header *curr_header = NULL, *prev_header = NULL;
+    struct Header *curr_header, *prev_header;
     size_t name_len, value_len;
+
+    printf("Request Info: uri: %s, http %s\n", request->uri, request->http);
 
     while (input_buf[0] != '\n') {
         // Allocating new header struct
@@ -66,7 +71,7 @@ parse_request(char *input_buf) {
         }
 
         // Name
-        name_len = strcspn(input_buf, "\r");
+        name_len = strcspn(input_buf, ":");
         curr_header->name = malloc(name_len + 1);
 
         if (curr_header->name == NULL) {
@@ -88,18 +93,25 @@ parse_request(char *input_buf) {
             free_request(request);
             return NULL;
         }
-
+/*
+        if (strlen(curr_header->name) == 0) {
+            break;
+        }
+*/
         strncpy(curr_header->value, input_buf, value_len);
         curr_header->value[value_len] = '\0';
-        input_buf += value_len + 2;
+        input_buf += value_len + 1;
 
+        printf("name: %s\tvalue: %s\n", curr_header->name, curr_header->value);
+ 
         // Preparing for next iteration
         curr_header->next = prev_header;
     }
-
+    printf("after while loop\n");
     request->headers = curr_header;
     input_buf += 2;
 
+    printf("handling body\n");
     /* Body */
     size_t body_len = strlen(input_buf);
     request->body = malloc(body_len + 1);
