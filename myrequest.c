@@ -9,8 +9,6 @@ parse_request(char *input_buf) {
 
     struct Request *request = malloc(sizeof(struct Request));
 
-    printf("here\n");
-
     if (request == NULL) {
         return NULL;
     }
@@ -94,8 +92,6 @@ parse_request(char *input_buf) {
         curr_header->value[value_len] = '\0';
         input_buf += value_len + 1;
 
-        printf("name: %s\tvalue: %s\n", curr_header->name, curr_header->value);
- 
         //Setup for next iteration
         if (!request->headers) {
             request->headers = curr_header;
@@ -103,39 +99,84 @@ parse_request(char *input_buf) {
             prev_header->next = curr_header;
         }
     }
-    printf("after while loop\n");
     input_buf += 1;
 
-    printf("handling body\n");
     /* Body */
-    size_t body_len = strlen(input_buf);
-    request->body = malloc(body_len + 1);
+   // size_t body_len = strlen(input_buf);
+    request->body = parse_body(input_buf);
 
     if (request->body == NULL) {
         free_entire_request(request);
         return NULL;
     }
 
-    strncpy(request->body, input_buf, body_len);
-    request->body[body_len] = '\0';
+    //strncpy(request->body, input_buf, body_len);
+    //request->body[body_len] = '\0';
 
     return request;
 }
 
 
-//struct Pair *
-//parse_body(char *body) {
+struct Pair *
+parse_body(char *body) {
     /**
      * Parses body into a linked list of key value pairs
      * Note: This should most likely be a hashtable, but I do not want extra dependencies
      */
+    int body_len = strlen(body);
+    int position = 0;
+    struct Pair *curr_pair, *prev_pair, *original_pair = NULL;
 
-    //struct Pair *curr_pair, *prev_pair
+    while (position < body_len) {
+        prev_pair = curr_pair;
+        curr_pair = malloc(sizeof(Pair));
 
-    //while (*body != '\n') {
-        
-  //  }
-//}
+        if (!original_pair) {
+            original_pair = curr_pair;
+        } else {
+            prev_pair->next = curr_pair;
+        }
+
+
+        if (!curr_pair) {
+            free_pairs(original_pair);
+            return NULL;
+        }
+
+        // Getting key value pair
+        if (position == 0) {
+            curr_pair->name = strtok(body, "=");
+        } else {
+            curr_pair->name = strtok(NULL, "=");
+        }
+        position += strlen(curr_pair->name) + 1;
+
+        curr_pair->value = strtok(NULL,"&");
+        position += strlen(curr_pair->value) + 1;
+    }
+    return original_pair;
+}
+
+
+char *
+get_value_pair(char *name, struct Pair *pair) {
+    /**
+     * Used in conjunction with pairs module in this lib. Takes name and returns 
+     * value, much like get functions for hashtables
+     */
+
+    while (pair) {
+        if (strcmp(pair->name, name) == 0) {
+            return pair->value;
+        }
+        pair = pair->next;
+    }
+
+    return NULL;
+}
+
+
+/* FREE FUNCTIONS */
 
 void
 free_request(struct Request *request) {
@@ -202,8 +243,33 @@ free_entire_request(struct Request *request) {
     free_headers(request->headers);
 
     if (!request->body) {
-        free(request->body);
+        free_pairs(request->body);
     }
 
     free(request);   
+}
+
+
+void
+free_pairs(struct Pair *pair) {
+    /**
+     * Frees Pairs in LL starting from head and iterating through
+     * Is null safe.
+     */
+
+    if (!pair) {
+         return;
+    }
+
+    if (pair->name) {
+        free(pair->name);
+    }
+
+    if (pair->value) {
+        free(pair->value);
+    }
+
+    free_pairs(pair->next);
+
+    free(pair);
 }

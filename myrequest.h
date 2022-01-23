@@ -16,8 +16,7 @@ typedef struct Request {
     char *uri;
     char *http;
     struct Header *headers;
-    char *body;
-    
+    struct Pair *body; 
 } Request;
 
 typedef struct Pair {
@@ -27,8 +26,11 @@ typedef struct Pair {
 } Pair;
 
 struct Request *parse_request(char *input_buf);
+struct Pair *parse_body(char *body);
+char *get_value_pair(char *name, struct Pair *pair);
 void free_request(struct Request *request);
 void free_header(struct Header *header);
 void free_entire_request(struct Request *request);
+void free_pairs(struct Pair *pair);
 
 #endif /* __MYREQUEST_H */
