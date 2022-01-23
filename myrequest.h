@@ -29,5 +29,6 @@ typedef struct Pair {
 struct Request *parse_request(char *input_buf);
 void free_request(struct Request *request);
 void free_header(struct Header *header);
+void free_entire_request(struct Request *request);
 
 #endif /* __MYREQUEST_H */

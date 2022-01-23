@@ -58,15 +58,13 @@ parse_request(char *input_buf) {
     struct Header *curr_header, *prev_header;
     size_t name_len, value_len;
 
-    printf("Request Info: uri: %s, http %s\n", request->uri, request->http);
-
     while (input_buf[0] != '\n') {
-        // Allocating new header struct
         prev_header = curr_header;
         curr_header = malloc(sizeof(struct Header));
 
+        // Allocating new header struct
         if (curr_header == NULL) {
-            free_request(request);
+            free_entire_request(request);
             return NULL;
         }
 
@@ -75,8 +73,7 @@ parse_request(char *input_buf) {
         curr_header->name = malloc(name_len + 1);
 
         if (curr_header->name == NULL) {
-            free_header(curr_header);
-            free_request(request);
+            free_entire_request(request);
             return NULL;
         }
 
@@ -89,27 +86,25 @@ parse_request(char *input_buf) {
         curr_header->value = malloc(value_len + 1);
 
         if (curr_header->value == NULL) {
-            free_header(curr_header);
-            free_request(request);
+            free_entire_request(request);
             return NULL;
         }
-/*
-        if (strlen(curr_header->name) == 0) {
-            break;
-        }
-*/
+
         strncpy(curr_header->value, input_buf, value_len);
         curr_header->value[value_len] = '\0';
         input_buf += value_len + 1;
 
         printf("name: %s\tvalue: %s\n", curr_header->name, curr_header->value);
  
-        // Preparing for next iteration
-        curr_header->next = prev_header;
+        //Setup for next iteration
+        if (!request->headers) {
+            request->headers = curr_header;
+        } else {
+            prev_header->next = curr_header;
+        }
     }
     printf("after while loop\n");
-    request->headers = curr_header;
-    input_buf += 2;
+    input_buf += 1;
 
     printf("handling body\n");
     /* Body */
@@ -117,8 +112,7 @@ parse_request(char *input_buf) {
     request->body = malloc(body_len + 1);
 
     if (request->body == NULL) {
-        free_header(request->headers);
-        free_request(request);
+        free_entire_request(request);
         return NULL;
     }
 
@@ -147,27 +141,69 @@ void
 free_request(struct Request *request) {
     /**
      * Frees request struct and returns void upon completion
+     * Is null safe.
+     *
      * Note: This function does not free header linked list. Must call 
-     * free_header function to do this
+     * free_header function to do this. Or free_entire_request.
      */
+    if (!request) {
+        return;
+    }
 
-    free(request->uri);
-    free(request->body);
+    if (!request->uri) {
+        free(request->uri);
+    }
+
+    if (!request->body) {
+        free(request->body);
+    }
+
     free(request);
 }
 
 
 void
-free_header(struct Header *header) {
+free_headers(struct Header *header) {
     /**
      * Frees header structs nested in linked list and returns void upon completion.
+     * Is null safe.
      * It is best practice to call this function from the head of the linked list
      */
     if (header != NULL) {
-        free(header->name);
-        free(header->value);
-        free_header(header->next);
+        if (!header->name) {
+            free(header->name);
+        }
+
+        if (!header->value) {
+            free(header->value);
+        }
+
+        free_headers(header->next);
         free(header);
     }
 }
 
+
+void
+free_entire_request(struct Request *request) {
+    /**
+     * Frees the entire requesr struct denoted as a pointer in param
+     * Is null safe
+     */
+
+    if (!request) {
+        return;
+    }
+
+    if (!request->uri) {
+        free(request->uri);
+    }
+
+    free_headers(request->headers);
+
+    if (!request->body) {
+        free(request->body);
+    }
+
+    free(request);   
+}
