@@ -1,5 +1,4 @@
 #include "myrequest.h"
-#include <stdio.h>
 
 struct Request *
 parse_request(char *input_buf) {
@@ -102,16 +101,12 @@ parse_request(char *input_buf) {
     input_buf += 1;
 
     /* Body */
-   // size_t body_len = strlen(input_buf);
     request->body = parse_body(input_buf);
 
     if (request->body == NULL) {
         free_entire_request(request);
         return NULL;
     }
-
-    //strncpy(request->body, input_buf, body_len);
-    //request->body[body_len] = '\0';
 
     return request;
 }
