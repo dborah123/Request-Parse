@@ -1,4 +1,5 @@
 #include "myrequest.h"
+#include <stdio.h>
 
 struct Request *
 parse_request(char *input_buf) {
@@ -55,7 +56,9 @@ parse_request(char *input_buf) {
     struct Header *curr_header, *prev_header;
     size_t name_len, value_len;
 
-    while (input_buf[0] != '\n') {
+    while (input_buf[0] != '\r' || input_buf[1] != '\n') {
+        printf("NEW HEADER: ");
+        fflush(stdout);
         prev_header = curr_header;
         curr_header = malloc(sizeof(struct Header));
 
@@ -91,6 +94,8 @@ parse_request(char *input_buf) {
         curr_header->value[value_len] = '\0';
         input_buf += value_len + 1;
 
+        printf("name: %s value: %s\n", curr_header->name, curr_header->value);
+
         //Setup for next iteration
         if (!request->headers) {
             request->headers = curr_header;
@@ -101,11 +106,17 @@ parse_request(char *input_buf) {
     input_buf += 1;
 
     /* Body */
-    request->body = parse_body(input_buf);
+    body_len = strlen(input_buf);
 
-    if (request->body == NULL) {
-        free_entire_request(request);
-        return NULL;
+    // Check if body is empty
+    if (body_len <= 1) {
+        request->body = NULL
+    } else {
+        request->body = parse_body(input_buf, body_len);
+        if (request->body == NULL) {
+            free_entire_request(request);
+            return NULL;
+        }
     }
 
     return request;
@@ -113,18 +124,21 @@ parse_request(char *input_buf) {
 
 
 struct Pair *
-parse_body(char *body) {
+parse_body(char *body, int body_len) {
     /**
      * Parses body into a linked list of key value pairs
      * Note: This should most likely be a hashtable, but I do not want extra dependencies
      */
-    int body_len = strlen(body);
     int position = 0;
     struct Pair *curr_pair, *prev_pair, *original_pair = NULL;
 
     while (position < body_len) {
         prev_pair = curr_pair;
         curr_pair = malloc(sizeof(Pair));
+
+        if (!curr_pair) {
+            return NULL;
+        }
 
         if (!original_pair) {
             original_pair = curr_pair;

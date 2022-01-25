@@ -26,7 +26,7 @@ typedef struct Pair {
 } Pair;
 
 struct Request *parse_request(char *input_buf);
-struct Pair *parse_body(char *body);
+struct Pair *parse_body(char *body, int body_len);
 char *get_value_pair(char *name, struct Pair *pair);
 void free_request(struct Request *request);
 void free_header(struct Header *header);
