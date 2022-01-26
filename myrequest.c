@@ -53,12 +53,14 @@ parse_request(char *input_buf) {
     input_buf += http_len + 1;
 
     /* Handling Headers */
-    struct Header *curr_header, *prev_header;
+    struct Header *curr_header, *prev_header = NULL;
     size_t name_len, value_len;
+    int body_len;
+
+    // Setting headers to NULL
+    request->headers = NULL;
 
     while (input_buf[0] != '\r' || input_buf[1] != '\n') {
-        printf("NEW HEADER: ");
-        fflush(stdout);
         prev_header = curr_header;
         curr_header = malloc(sizeof(struct Header));
 
@@ -94,8 +96,6 @@ parse_request(char *input_buf) {
         curr_header->value[value_len] = '\0';
         input_buf += value_len + 1;
 
-        printf("name: %s value: %s\n", curr_header->name, curr_header->value);
-
         //Setup for next iteration
         if (!request->headers) {
             request->headers = curr_header;
@@ -110,7 +110,9 @@ parse_request(char *input_buf) {
 
     // Check if body is empty
     if (body_len <= 1) {
-        request->body = NULL
+        request->body = NULL;
+    } else if (strchr(request->uri, '.')) { // If uri is a file request
+        request->body = NULL;
     } else {
         request->body = parse_body(input_buf, body_len);
         if (request->body == NULL) {
