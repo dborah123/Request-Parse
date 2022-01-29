@@ -113,6 +113,8 @@ parse_request(char *input_buf) {
         request->body = NULL;
     } else if (strchr(request->uri, '.')) { // If uri is a file request
         request->body = NULL;
+    } else if (request->method == GET) {
+        request->body = NULL;
     } else {
         request->body = parse_body(input_buf, body_len);
         if (request->body == NULL) {
