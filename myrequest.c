@@ -136,6 +136,11 @@ parse_body(char *body, int body_len) {
     int position = 0;
     struct Pair *curr_pair, *prev_pair, *original_pair = NULL;
 
+    // Preparing beginning of body
+    while (!isalpha(*body) && !isdigit(*body)) {
+        body++;
+    }
+
     while (position < body_len) {
         prev_pair = curr_pair;
         curr_pair = malloc(sizeof(Pair));
@@ -164,7 +169,7 @@ parse_body(char *body, int body_len) {
         }
         position += strlen(curr_pair->name) + 1;
 
-        curr_pair->value = strtok(NULL,"&");
+        curr_pair->value = strtok(NULL,"&\n\rEOF");
         position += strlen(curr_pair->value) + 1;
     }
     return original_pair;

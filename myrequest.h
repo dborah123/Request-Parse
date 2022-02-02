@@ -2,6 +2,7 @@
 #define __MYREQUEST_H
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 typedef enum Method { GET, POST, UNSUPPORTED } Method;
 
