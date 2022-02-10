@@ -173,14 +173,11 @@ parse_body(char *body, int body_len) {
         position += strlen(curr_pair->value) + 1;
     }
 
-    printf("value:%s\n", curr_pair->value);
-
     // Adding better null terminator
     char *last_val = curr_pair->value;
 
     while (isalpha(*last_val) || isdigit(*last_val)) {
         last_val++;
-        printf("next\n");
     }
 
     *last_val = '\0';
